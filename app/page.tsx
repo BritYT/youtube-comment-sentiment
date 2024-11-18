@@ -26,9 +26,9 @@ export default function Home() {
       clearTimeout(timeoutId);
       const data = await response.json();
       setSentiment(data.sentiment);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error analyzing sentiment:", error);
-      if (error.name === 'AbortError') {
+      if (error?.name === 'AbortError') {
         setSentiment("Request timed out. The video might have too many comments to analyze.");
       } else {
         setSentiment("Error analyzing comments. Please try again.");
