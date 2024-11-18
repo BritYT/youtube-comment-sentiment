@@ -19,7 +19,7 @@ export async function POST(req: Request) {
     const response = await youtube.commentThreads.list({
       part: ["snippet"],
       videoId,
-      maxResults: 100,
+      maxResults: 40,
       key: process.env.YOUTUBE_API_KEY, // Make sure this is set in your .env
     });
 
