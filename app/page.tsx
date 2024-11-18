@@ -11,19 +11,28 @@ export default function Home() {
     setLoading(true);
     
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
       const response = await fetch("/api/analyze-sentiment", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ videoUrl }),
+        signal: controller.signal
       });
       
+      clearTimeout(timeoutId);
       const data = await response.json();
       setSentiment(data.sentiment);
     } catch (error) {
       console.error("Error analyzing sentiment:", error);
-      setSentiment("Error analyzing comments. Please try again.");
+      if (error.name === 'AbortError') {
+        setSentiment("Request timed out. The video might have too many comments to analyze.");
+      } else {
+        setSentiment("Error analyzing comments. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
