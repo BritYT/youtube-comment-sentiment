@@ -1,17 +1,9 @@
-import { NextResponse } from "next/server";
-import { google } from "googleapis";
-import OpenAI from "openai";
+import { google } from 'googleapis';
+import { NextResponse } from 'next/server';
+import { OpenAI } from 'openai';
 
-const youtube = google.youtube({
-  version: "v3",
-  auth: process.env.YOUTUBE_API_KEY,
-});
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-export const runtime = 'edge';
+// Initialize the YouTube API client
+const youtube = google.youtube('v3');
 
 export async function POST(req: Request) {
   try {
@@ -22,12 +14,13 @@ export async function POST(req: Request) {
     if (!videoId) {
       return NextResponse.json({ error: "Invalid video URL" }, { status: 400 });
     }
-    
+
     // Get comments using YouTube API
     const response = await youtube.commentThreads.list({
       part: ["snippet"],
       videoId,
       maxResults: 100,
+      key: process.env.YOUTUBE_API_KEY, // Make sure this is set in your .env
     });
 
     const comments = response.data.items?.map(
@@ -35,6 +28,10 @@ export async function POST(req: Request) {
     ).filter(Boolean);
 
     // Analyze comments with OpenAI
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
     const completion = await openai.chat.completions.create({
       messages: [
         {
@@ -51,10 +48,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ sentiment: completion.choices[0].message.content });
   } catch (error) {
-    console.error("Error:", error);
-    return NextResponse.json(
-      { error: "Failed to analyze comments" },
-      { status: 500 }
-    );
+    console.error('Error:', error);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 } 

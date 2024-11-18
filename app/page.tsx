@@ -1,37 +1,41 @@
 "use client";
 import { useState } from "react";
 
+// Define an interface for your API response
+interface AnalysisResponse {
+  sentiment?: string;
+  error?: string;
+}
+
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState("");
   const [sentiment, setSentiment] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setLoading(true);
-    
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
 
-      const response = await fetch("/api/analyze-sentiment", {
-        method: "POST",
+    if (!videoUrl || !videoUrl.includes('youtube.com')) {
+      console.error('Please enter a valid YouTube URL');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/analyze-sentiment', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ videoUrl }),
-        signal: controller.signal
       });
-      
-      clearTimeout(timeoutId);
-      const data = await response.json();
-      setSentiment(data.sentiment);
-    } catch (error: any) {
-      console.error("Error analyzing sentiment:", error);
-      if (error?.name === 'AbortError') {
-        setSentiment("Request timed out. The video might have too many comments to analyze.");
-      } else {
-        setSentiment("Error analyzing comments. Please try again.");
+
+      const data: AnalysisResponse = await response.json();
+      setSentiment(data.sentiment || '');
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error('Error:', error.message);
       }
     } finally {
       setLoading(false);
